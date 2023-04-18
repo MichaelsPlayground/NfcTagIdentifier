@@ -38,6 +38,7 @@ public class TagIdentification {
     private int sizeOfTechList = 0;
     private boolean isMifareClassic = false;
     private boolean isMifareUltralight = false;
+    private boolean isNtag21x = false;
     private boolean isNfca = false;
     private boolean isNdefFormatable = false;
 
@@ -47,6 +48,7 @@ public class TagIdentification {
     // success in reading the technology
     private boolean mifareClassicSuccess = false;
     private boolean mifareUltralightSuccess = false;
+    private boolean ntag21xSuccess = false;
 
     private String[] techList; // get it from the tag
     private String tagId; // get it from the tag
@@ -121,6 +123,7 @@ public class TagIdentification {
      */
 
     private void doIdentification() {
+
         // step 1 - what classes can we use to access the tag
         techList = tag.getTechList();
         identifyClasses();
@@ -139,6 +142,11 @@ public class TagIdentification {
             analyzeMifareUltralight();
         }
 
+        // this may run into problems as I'm only checking for NTAG21x in this section
+        if (isNfca) {
+            Log.d(TAG, "Analyze of NFCA (NTAG21x) started");
+            analyzeNtag21x();
+        }
 
     }
 
@@ -519,8 +527,114 @@ public class TagIdentification {
 
 
     /**
-     * section for
+     * section for NTAG21x
      */
+
+    public enum techNtag21x {
+        NTAG213,
+        NTAG215,
+        NTAG216
+    }
+
+    private void analyzeNtag21x() {
+        // the easiest way to identify a NTAG21x is by using the getVersion command on the NFCA technology
+        nfcA = NfcA.get(tag);
+        if (nfcA == null) {
+            ntag21xSuccess = false;
+            return;
+        }
+
+        try {
+            nfcA.connect();
+
+
+            byte[] getVersionResp = ntag21xGetVersion(nfcA);
+            // see the datasheet page 36
+            if (getVersionResp[2] == (byte) 0x04) {
+                // it is of type NTAG
+                isNtag21x = true;
+                tagTypeName = "NTAG21x";
+                tagId = bytesToHexNpe(nfcA.getTag().getId());
+                // storage size is in byte 6
+                if (getVersionResp[6] == (byte) 0x0F) {
+                    // NTAG213
+                    tagSizeInBytes = 180; // complete memory
+                    tagSizeUserInBytes = 144; // user memory
+                    numberOfPages = tagSizeInBytes / 4; // should be 45
+                    numberOfCounters = 1;
+                    numberOfPageStartUserMemory = 4;
+                    productName = "NTAG213";
+                    tagTypeSubName = techNtag21x.NTAG213.toString();
+                    tagTypeSub = 0;
+                    isTested = false;
+                } else if (getVersionResp[6] == (byte) 0x11) {
+                    // NTAG215
+                    tagSizeInBytes = 540; // complete memory
+                    tagSizeUserInBytes = 504; // user memory
+                    numberOfPages = tagSizeInBytes / 4; // should be 135
+                    numberOfCounters = 1;
+                    numberOfPageStartUserMemory = 4;
+                    productName = "NTAG215";
+                    tagTypeSubName = techNtag21x.NTAG215.toString();
+                    tagTypeSub = 1;
+                    isTested = false;
+                } else if (getVersionResp[6] == (byte) 0x13) {
+                    // NTAG216
+                    tagSizeInBytes = 924; // complete memory
+                    tagSizeUserInBytes = 888; // user memory
+                    numberOfPages = tagSizeInBytes / 4; // should be 231
+                    numberOfCounters = 1;
+                    numberOfPageStartUserMemory = 4;
+                    productName = "NTAG216";
+                    tagTypeSubName = techNtag21x.NTAG216.toString();
+                    tagTypeSub = 2;
+                    isTested = true;
+                } else {
+                    // unknown NTAG type
+                    tagSizeInBytes = 0; // complete memory
+                    tagSizeUserInBytes = 0; // user memory
+                    numberOfPages = 0; // should be 231
+                    numberOfCounters = 0;
+                    numberOfPageStartUserMemory = 0;
+                    productName = "NTAG_UNKNOWN";
+                    tagTypeSubName = "NTAG UNKNOWN";
+                    tagTypeSub = -1;
+                    isTested = false;
+                }
+            }
+
+        } catch (IOException e) {
+            //throw new RuntimeException(e);
+            Log.e(TAG, "Error in connection to the tag: " + e.getMessage());
+        }
+        // close any open connection
+        try {
+            nfcA.close();
+        } catch (Exception e) {
+        }
+    }
+
+    private byte[] ntag21xGetVersion(NfcA nfcA) {
+        byte[] getVersionResponse = null;
+        try {
+            byte[] getVersionCommand = new byte[]{(byte) 0x60};
+            getVersionResponse = nfcA.transceive(getVersionCommand);
+            return getVersionResponse;
+        } catch (IOException e) {
+            Log.d(TAG, "Mifare Ultralight getVersion unsupported, IOException: " + e.getMessage());
+        }
+        // this is just an advice - if an error occurs - close the connection and reconnect the tag
+        // https://stackoverflow.com/a/37047375/8166854
+        try {
+            nfcA.close();
+        } catch (Exception e) {
+        }
+        try {
+            nfcA.connect();
+        } catch (Exception e) {
+        }
+        return null;
+    }
 
 
     /**
@@ -583,6 +697,18 @@ public class TagIdentification {
                     + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
+    }
+
+    public static boolean testBit(byte b, int n) {
+        int mask = 1 << n; // equivalent of 2 to the nth power
+        return (b & mask) != 0;
+    }
+
+    // https://stackoverflow.com/a/29396837/8166854
+    public static boolean testBit(byte[] array, int n) {
+        int index = n >>> 3; // divide by 8
+        int mask = 1 << (n & 7); // n modulo 8
+        return (array[index] & mask) != 0;
     }
 
 }

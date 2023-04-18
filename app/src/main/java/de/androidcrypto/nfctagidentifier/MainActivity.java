@@ -65,6 +65,13 @@ public class MainActivity extends AppCompatActivity  implements NfcAdapter.Reade
     @Override
     public void onTagDiscovered(Tag tag) {
         outputString = "";
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                etData.setText("");
+                etLog.setText("");
+            }
+        });
         Log.d(TAG, "NFC tag discovered");
         writeToUiAppend("NFC tag discovered");
         playSinglePing();

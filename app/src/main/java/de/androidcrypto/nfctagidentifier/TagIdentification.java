@@ -57,12 +57,13 @@ public class TagIdentification {
     private int tagTypeSub;
     private String tagTypeSubName;
     private String productName;
-    private int tagSizeInBytes = 0;
-    private int tagSizeUserInBytes = 0;
-    private int numberOfCounters = 0;
-    private int numberOfPages = 0;
-    private int numberOfPageStartUserMemory = 0;
-
+    private int tagSizeInBytes = 0; // Mifare Ultralight
+    private int tagSizeUserInBytes = 0; // Mifare Ultralight
+    private int numberOfCounters = 0; // Mifare Ultralight
+    private int numberOfPages = 0; // Mifare Ultralight
+    private int numberOfPageStartUserMemory = 0; // Mifare Ultralight
+    private int numberOfBlocks = 0; // Mifare Classic
+    private int numberOfUserBlocks = 0; // Mifare Classic
 
     public TagIdentification(@NonNull Tag tag) {
         Log.d(TAG, "Tag identification started");
@@ -89,7 +90,6 @@ public class TagIdentification {
     /**
      * section for getter and setter
      */
-
 
 
     public boolean isMifareUltralight() {
@@ -183,9 +183,13 @@ public class TagIdentification {
 
     private void analyzeMifareClassic() {
 
+        tagTypeName = "Mifare Classic";
+        tagId = bytesToHexNpe(tag.getId());
+
         // we are using the NfcA class for identifying
         nfcA = NfcA.get(tag);
         short sak = nfcA.getSak();
+
         // close any open connection
         try {
             nfcA.close();
@@ -199,127 +203,97 @@ public class TagIdentification {
 
         mfc = MifareClassic.get(tag);
         // now I'm trying to read the sector 69
-        byte[] response = null;
+        byte[] block69Response = null;
+        int size = 0;
         try {
             mfc.connect();
-            response = mifareClassicReadBlock(mfc, 69, hexStringToByteArray("4b791bea7bcc"));
+            size = mfc.getSize();
+
+            block69Response = mifareClassicReadBlock(mfc, 69, hexStringToByteArray("4b791bea7bcc"));
+            //response = mifareClassicReadBlock(mfc, 69, hexStringToByteArray("000000000000"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
         // close any open connection
         try {
             mfc.close();
         } catch (Exception e) {
         }
-        if (response != null) {
-            System.out.println("read page 69 response: " + bytesToHexNpe(response));
+        if (block69Response != null) {
+            System.out.println("read page 69 response: " + bytesToHexNpe(block69Response));
         } else {
             System.out.println("read page 69 response is NULL");
         }
 
-
-        //System.out.println("*** SAK: " + bytesToHexNpe((byte) sak));
-
-
-        mfc = MifareClassic.get(tag);
-        if (mfc == null) {
-            mifareClassicSuccess = false;
-            return;
-        }
-        tagTypeName = "Mifare Classic";
-        tagId = bytesToHexNpe(mfc.getTag().getId());
-
-        boolean isUltralight = false;
-        boolean isUltralightC = false;
-        boolean isUltralightEv1 = false;
-
-        try {
-            mfc.connect();
-
-            tagSizeInBytes = mfc.getSize();
-
-
-
-
-
-
-            // checks for distinguishing the correct type of card
-            byte[] getVersionResp = mifareClassicGetVersion(mfc);
-            byte[] doAuthResp = mifareClassicDoAuthenticate(mfc);
-            System.out.println("getVersionResp: " + bytesToHexNpe(getVersionResp));
-            System.out.println("doAuthResp: " + bytesToHexNpe(doAuthResp));
-            // if getVersionResponse is not null it is an Ultralight EV1 or later
-            if (getVersionResp != null) {
-                isUltralightEv1 = true;
-                // storage size is in byte 6, 0b or 0e
-                // Mifare Ultralight EV1
-                if (getVersionResp[6] == (byte) 0x0b) {
-                    tagSizeInBytes = 64; // complete memory
-                    tagSizeUserInBytes = 48; // user memory
-                    numberOfPages = tagSizeInBytes / 4;
-                    numberOfPageStartUserMemory = 4;
-                    productName = "MF0UL11";
-                    mifareUltralightSuccess = true;
-                    isTested = true;
-                }
-                if (getVersionResp[6] == (byte) 0x0e) {
-                    tagSizeInBytes = 144; // complete memory
-                    tagSizeUserInBytes = 128; // user memory
-                    numberOfPages = tagSizeInBytes / 4;
-                    numberOfPageStartUserMemory = 4;
-                    productName = "MF0UL21";
-                    mifareUltralightSuccess = true;
-                    isTested = false;
-                }
-                numberOfCounters = 3;
-            } else {
-                // now we are checking if getVersionResponse is not null meaning an Ultralight-C tag
-                if (doAuthResp != null) {
-                    // Ultralight-C
-                    isUltralightC = true;
-                    tagSizeInBytes = 192; // complete memory
-                    tagSizeUserInBytes = 144; // user memory
-                    numberOfPages = tagSizeInBytes / 4;
-                    numberOfCounters = 1;
-                    numberOfPageStartUserMemory = 4;
-                    productName = "MF0ICU2";
-                    mifareUltralightSuccess = true;
-                    isTested = true;
-                } else {
-                    // the tag is an Ultralight tag
-                    isUltralight = true;
-                    tagSizeInBytes = 64; // complete memory
-                    tagSizeUserInBytes = 48; // user memory
-                    numberOfPages = tagSizeInBytes / 4;
-                    numberOfCounters = 0;
-                    numberOfPageStartUserMemory = 4;
-                    productName = "MF0ICU1";
-                    mifareUltralightSuccess = true;
-                    isTested = false;
-                }
-            }
-            // tag identification
-            if (isUltralight) {
-                Log.d(TAG, "Tag is a Mifare Ultralight with a storage size of " + tagSizeInBytes + " bytes");
-                tagTypeSubName = techUltralight.MifareUltralightFirst.toString();
+        boolean isClassicEv = false;
+        // now we are ready for the distinguishing
+        if (block69Response == null) {
+            // means no EV type
+            isClassicEv = false;
+            if (size == MifareClassic.SIZE_MINI) {
                 tagTypeSub = 0;
-            }
-            if (isUltralightC) {
-                Log.d(TAG, "Tag is a Mifare Ultralight-C with a storage size of " + tagSizeInBytes + " bytes");
-                tagTypeSubName = techUltralight.MifareUltralightC.toString();
+                tagTypeSubName = "Mifare Classic Mini";
+                tagSizeInBytes = 320; // complete memory
+                tagSizeUserInBytes = 224; // user memory
+                numberOfBlocks = tagSizeInBytes / 16; // should be 20
+                numberOfUserBlocks = 14;
+                productName = "MF1ICS20";
+                mifareClassicSuccess = true;
+                isTested = false;
+            } else if (size == MifareClassic.SIZE_1K) {
                 tagTypeSub = 1;
+                tagTypeSubName = "Mifare Classic 1K";
+                tagSizeInBytes = 1024; // complete memory
+                tagSizeUserInBytes = 752; // user memory
+                numberOfBlocks = tagSizeInBytes / 16; // should be 64
+                numberOfUserBlocks = 47;
+                productName = "MF1ICS50";
+                mifareClassicSuccess = true;
+                isTested = true;
+            } else if (size == MifareClassic.SIZE_4K) {
+                tagTypeSub = 2;
+                tagTypeSubName = "Mifare Classic 4K";
+                tagSizeInBytes = 4096; // complete memory
+                tagSizeUserInBytes = 3056; // user memory
+                numberOfBlocks = tagSizeInBytes / 16; // should be 256
+                numberOfUserBlocks = 191;
+                productName = "MF1ICS70";
+                mifareClassicSuccess = true;
+                isTested = false;
+            } else {
+                // this is something uncommon
+                mifareClassicSuccess = false;
             }
-            if (isUltralightEv1) {
-                Log.d(TAG, "Tag is a Mifare Ultralight EV1 with a storage size of " + tagSizeInBytes + " bytes");
-                tagTypeSubName = techUltralight.MifareUltralightEv1.toString();
-                tagTypeSub  = 2;
+        } else {
+            // means EV type
+            isClassicEv = true;
+            if (size == MifareClassic.SIZE_1K) {
+                tagTypeSub = 3;
+                tagTypeSubName = "Mifare Classic 1K EV1";
+                tagSizeInBytes = 1024; // complete memory
+                tagSizeUserInBytes = 752; // user memory
+                numberOfBlocks = tagSizeInBytes / 16; // should be 64
+                numberOfUserBlocks = 47;
+                productName = "MF1S50YYX_V1";
+                mifareClassicSuccess = true;
+                isTested = true;
+            } else if (size == MifareClassic.SIZE_4K) {
+                tagTypeSub = 4;
+                tagTypeSubName = "Mifare Classic 4K EV1";
+                tagSizeInBytes = 4096; // complete memory
+                tagSizeUserInBytes = 3056; // user memory
+                numberOfBlocks = tagSizeInBytes / 16; // should be 256
+                numberOfUserBlocks = 191;
+                productName = "MF1S70YYX_V1";
+                mifareClassicSuccess = true;
+                isTested = false;
+            } else {
+                // this is something uncommon
+                mifareClassicSuccess = false;
             }
 
-        } catch (IOException e) {
-            //throw new RuntimeException(e);
-            Log.e(TAG, "Error in connection to the tag: " + e.getMessage());
         }
+
         // close any open connection
         try {
             mfu.close();
@@ -484,7 +458,7 @@ public class TagIdentification {
             if (isUltralightEv1) {
                 Log.d(TAG, "Tag is a Mifare Ultralight EV1 with a storage size of " + tagSizeInBytes + " bytes");
                 tagTypeSubName = techUltralight.MifareUltralightEv1.toString();
-                tagTypeSub  = 2;
+                tagTypeSub = 2;
             }
 
         } catch (IOException e) {
@@ -562,8 +536,8 @@ public class TagIdentification {
         sb.append("Tag product name: ").append(productName).append("\n");
         sb.append("Complete memory: ").append(String.valueOf(tagSizeInBytes)).append(" bytes").append("\n");
         sb.append("User memory: ").append(String.valueOf(tagSizeUserInBytes)).append(" bytes").append("\n");
-        sb.append("Complete number of pages: ").append(String.valueOf(numberOfPages)).append("\n");
-        sb.append("Start of user memory page: ").append(String.valueOf(numberOfPageStartUserMemory)).append("\n");
+        sb.append("Complete number of blocks: ").append(String.valueOf(numberOfBlocks)).append("\n");
+        sb.append("Complete number of user memory blocks: ").append(String.valueOf(numberOfUserBlocks)).append("\n");
         sb.append("Number of counters: ").append(String.valueOf(numberOfCounters)).append("\n");
 
         sb.append("Analyze is tested: ").append(isTested);

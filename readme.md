@@ -47,6 +47,22 @@ There are 3 tags available and the datasheet covers all of them MF3ICDx21_41_81 
 
 Mifare DESFire Light MF2DL(H)x0: https://www.nxp.com/docs/en/data-sheet/MF2DLHX0.pdf
 
+Mifare DESFire EV3 MF3D(H)x3: https://www.nxp.com/docs/en/data-sheet/MF3DHx3_SDS.pdf
+
+Mifare DESFire EV3 Quick start guide: https://www.nxp.com/docs/en/application-note/AN12753.pdf
+
+Mifare DESFire EV3 feature and functionality comparison to other MIFARE DESFire products: https://www.nxp.com/docs/en/application-note/AN12752.pdf
+
+TAPLinx project https://github.com/dfpalomar/TapLinxSample/
+
+https://stackoverflow.com/questions/41249713/configure-mifare-desfire-ev1-as-nfc-forum-type-4-tag-for-ndef
+
+https://stackoverflow.com/questions/37675905/create-standard-data-file-in-mifare-desfire
+
+
+
+Access on Android through IsoDep technology
+
 https://stackoverflow.com/questions/19589534/android-nfc-communication-with-mifare-desfire-ev1
 
 https://stackoverflow.com/questions/25376914/access-mifare-desfire-card
@@ -57,7 +73,9 @@ Looks good - complete app: https://github.com/skjolber/desfire-tools-for-android
 
 A research on how Metro de Madrid NFC cards works https://github.com/CRTM-NFC/Mifare-Desfire
 
-HCE with DESFire: https://github.com/piotrekwitkowski/LibraryNFC/
+HCE with DESFire EV1: https://github.com/piotrekwitkowski/LibraryNFC/
+
+Reversed engineering commands: https://github.com/revk/DESFireAES/blob/master/DESFire.pdf
 
 
 

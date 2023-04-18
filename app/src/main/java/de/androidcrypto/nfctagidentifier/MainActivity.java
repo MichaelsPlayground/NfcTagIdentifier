@@ -77,6 +77,16 @@ public class MainActivity extends AppCompatActivity  implements NfcAdapter.Reade
         playSinglePing();
         setLoadingLayoutVisibility(true);
 
+        byte[] tagId = tag.getId();
+        writeToUiAppend("TagId: " + bytesToHexNpe(tagId));
+        String[] techList = tag.getTechList();
+        writeToUiAppend("TechList found with these entries:");
+        boolean isoDepInTechList = false;
+        for (String s : techList) {
+            writeToUiAppend(s);
+            if (s.equals("android.nfc.tech.IsoDep")) isoDepInTechList = true;
+        }
+
         // identify the tag
         TagIdentification ti = new TagIdentification(tag);
         if (ti != null) {
@@ -93,15 +103,7 @@ public class MainActivity extends AppCompatActivity  implements NfcAdapter.Reade
             writeToUiAppend("Size: " + String.valueOf(mc.getSize()));
         }
 
-        byte[] tagId = tag.getId();
-        writeToUiAppend("TagId: " + bytesToHexNpe(tagId));
-        String[] techList = tag.getTechList();
-        writeToUiAppend("TechList found with these entries:");
-        boolean isoDepInTechList = false;
-        for (String s : techList) {
-            writeToUiAppend(s);
-            if (s.equals("android.nfc.tech.IsoDep")) isoDepInTechList = true;
-        }
+
         // proceed only if tag has IsoDep in the techList
         if (isoDepInTechList) {
             IsoDep nfc = null;

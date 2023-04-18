@@ -541,12 +541,14 @@ public class TagIdentification {
         nfcA = NfcA.get(tag);
         if (nfcA == null) {
             ntag21xSuccess = false;
+            Log.e(TAG, "Error in using NfcA technology");
             return;
         }
 
         try {
             nfcA.connect();
 
+            System.out.println("*** SAK: " + nfcA.getSak() + " ***");
 
             byte[] getVersionResp = ntag21xGetVersion(nfcA);
             // see the datasheet page 36

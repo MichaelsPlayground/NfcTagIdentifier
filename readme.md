@@ -16,6 +16,8 @@ ones.
 
 Get the document here: https://www.nxp.com/docs/en/application-note/AN10833.pdf
 
+https://android.googlesource.com/platform/frameworks/base/+/48a5ed5/core/java/android/nfc/tech/TagTechnology.java
+
 ## Mifare Classic family
 
 // for details see: https://android.googlesource.com/platform/frameworks/base/+/48a5ed5/core/java/android/nfc/tech/MifareClassic.java
@@ -31,6 +33,7 @@ Mifare Classic EV1 1K: Total memory . Get the datasheet MF1S50YYX_V1 here: https
 
 Mifare Classic EV1 4K: Total memory . Get the datasheet MF1S70YYX_V1 here: https://www.nxp.com/docs/en/data-sheet/MF1S70YYX_V1.pdf
 
+https://android.googlesource.com/platform/frameworks/base/+/48a5ed5/core/java/android/nfc/tech/MifareClassic.java
 
 ## Mifare Ultralight family
 
@@ -42,9 +45,37 @@ Mifare Classic EV1 4K: Total memory . Get the datasheet MF1S70YYX_V1 here: https
 
 There are 3 tags available and the datasheet covers all of them MF3ICDx21_41_81 : https://www.nxp.com/docs/en/data-sheet/MF3ICDX21_41_81_SDS.pdf
 
-https://www.linkedin.com/pulse/mifare-desfire-introduction-david-coelho
+Mifare DESFire Light MF2DL(H)x0: https://www.nxp.com/docs/en/data-sheet/MF2DLHX0.pdf
+
+https://stackoverflow.com/questions/19589534/android-nfc-communication-with-mifare-desfire-ev1
+
+https://stackoverflow.com/questions/25376914/access-mifare-desfire-card
+
+https://stackoverflow.com/questions/11523765/how-well-does-the-android-nfc-api-support-mifare-desfire
+
+Looks good - complete app: https://github.com/skjolber/desfire-tools-for-android
+
+A research on how Metro de Madrid NFC cards works https://github.com/CRTM-NFC/Mifare-Desfire
+
+HCE with DESFire: https://github.com/piotrekwitkowski/LibraryNFC/
+
+
+
+An article about DESFire usage: https://www.linkedin.com/pulse/mifare-desfire-introduction-david-coelho
 
 See sample code in [Mifare DESFire An Introduction](Mifare DESFire An Introduction.md)
+
+List of DESFire commands: https://github.com/jekkos/android-hce-desfire/blob/master/hceappletdesfire/src/main/java/net/jpeelaer/hce/desfire/DesFireInstruction.java
+
+https://ridrix.wordpress.com/2009/09/19/mifare-desfire-communication-example/
+
+https://github.com/codebutler/farebot/tree/master/farebot-card-desfire/src/main/java/com/codebutler/farebot/card/desfire
+
+https://neteril.org/files/M075031_desfire.pdf
+
+A lot of full commands and responds regarding DESFire: Mifare DESFire Light Features and Hints: https://www.nxp.com/docs/en/application-note/AN12343.pdf
+
+
 
 ## NTAG21x family
 

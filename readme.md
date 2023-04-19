@@ -20,6 +20,9 @@ https://android.googlesource.com/platform/frameworks/base/+/48a5ed5/core/java/an
 
 ## Mifare Classic family
 
+Some tag facts: 7-byte UID or 4-byte NUID identifier, Individual set of two keys per sector to support multi-application with key hierarchy, 
+the data is organized in sectors with of 4 blocks each (last / 4th block containts the keys and access rights); each block is 16 bytes long.  
+
 // for details see: https://android.googlesource.com/platform/frameworks/base/+/48a5ed5/core/java/android/nfc/tech/MifareClassic.java
 // size could be 320 / SIZE_MINI, 1024 / SIZE_1K, 2048 / SIZE_2K or 4096 / SIZE_4K
 
@@ -37,15 +40,54 @@ https://android.googlesource.com/platform/frameworks/base/+/48a5ed5/core/java/an
 
 ## Mifare Ultralight family
 
+Some tag facts: 7-byte UID in accordance with ISO/IEC 14443-3 for each device, 32-bit user definable One-Time Programmable (OTP) area, 
+Field programmable read-only locking function per page, the data is organized in pages of 4 byte of data each.
+
+For Ultralight C additionally: 3DES Authentication, Anti-cloning support by unique 7-byte serial number for each device, 
+32-bit user programmable OTP area, Field programmable read-only locking function per page for first 512-bit, 
+Read-only locking per block for the memory above 512 bit
+
+For Ultralight EV1 additionally: 32-bit user definable One-Time Programmable (OTP) area, 3 independent 24-bit true one-way counters, 
+Field programmable read-only locking function per page (per 2 pages for the extended memory section), ECC based originality signature, 
+32-bit password protection to prevent unintended memory operations.
+
 1) Mifare Ultralight: Total memory 64 bytes. Get the datasheet MF0ICU1 here: https://www.nxp.com/docs/en/data-sheet/MF0ICU1.pdf
 2) Mifare Ultralight C: Total memory 192 bytes. Get the datasheet here MF0ICU2: https://www.nxp.com/docs/en/data-sheet/MF0ICU2.pdf
 3) Mifare Ultralight EV1: Total memory 64 and 144 bytes. Get the datasheet here: https://www.nxp.com/docs/en/data-sheet/MF0ULX1.pdf
 
-## Mifare DESFire EV1 family
+## Mifare DESFire family
+
+Some tag facts: Flexible file system, Up to 28 applications simultaneously on one PICC, Up to 16 files in each application, 
+Unique 7 Byte serial number for each device, Mutual three pass authentication, Hardware DES/3DES Data encryption on RF-channel 
+with replay attack protection using 56/112 bit Keys featuring key versioning, Data Authenticity by 4 Byte MAC, Authentication 
+on Application level, Hardware exception sensors, Self-securing file system. The data is organized in files.
+
+For DESFire EV1 additionally: Up to 32 files in each application (standard data file, back-up data file, value file, 
+linear record file and cyclic record file), File size is determined during creation, Common Criteria Certification: EAL4+ 
+(Hardware and Software), Optional “RANDOM” ID for enhance security and privacy, Mutual three-pass authentication,
+1 card master key and up to 14 keys per application, Hardware DES using 56/112/168 bit keys featuring key version, 
+data authenticity by 8 byte CMAC, Hardware AES using 128-bit keys featuring key version, data authenticity by 8 byte CMAC, 
+Data encryption on RF-channel, 
+
+For DESFire EV2 additionally: MIsmartApp (Delegated Application Management), Memory reuse in DAM applications (Format Application), 
+Transaction MAC on application level, Multiple Key Sets per application with fast key rolling mechanism (up to 16 sets), 
+Accessing files from any two applications during a single transaction, Multiple keys assignments for each file access right (up to 8), 
+Virtual Card Architecture for enhanced card/application selection on multi-VC devices with privacy protection, 
+Proximity Check for protection against Relay Attacks, Originality Check for proof of genuine NXP’s product, 
+New EV2 Secure Messaging based on AES (similar with MIFARE Plus’s secure messaging)
+
+For DESFire EV3 additionally: Common Criteria certification: EAL5+ (Hardware and Software), Self-securing file system, 
+Transaction MAC signed with secret key per application, Secure Unique NFC (SUN) enabled by Secure Dynamic Messaging (SDM) 
+which is mirrored as text into the NDEF message (compatible with NTAG DNA), NFC Forum Type 4 Tag certified (Certificate ID. 58652)
+
 
 There are 3 tags available and the datasheet covers all of them MF3ICDx21_41_81 : https://www.nxp.com/docs/en/data-sheet/MF3ICDX21_41_81_SDS.pdf
 
 Mifare DESFire Light MF2DL(H)x0: https://www.nxp.com/docs/en/data-sheet/MF2DLHX0.pdf
+
+Mifare DESFire EV1 MF3ICDX21_41_81_SDS: https://www.nxp.com/docs/en/data-sheet/MF3ICDX21_41_81_SDS.pdf
+
+Mifare DESFire EV2 MF3DX2_MF3DHX2_SDS: https://www.nxp.com/docs/en/data-sheet/MF3DX2_MF3DHX2_SDS.pdf
 
 Mifare DESFire EV3 MF3D(H)x3: https://www.nxp.com/docs/en/data-sheet/MF3DHx3_SDS.pdf
 
@@ -96,6 +138,10 @@ A lot of full commands and responds regarding DESFire: Mifare DESFire Light Feat
 
 
 ## NTAG21x family
+
+Some tag facts: Manufacturer programmed 7-byte UID for each device, Pre-programmed Capability container with one time programmable bits (NDEF), 
+Field programmable read-only locking function, ECC based originality signature, 32-bit password protection to prevent unauthorized memory operations. 
+The data is organized in pages of 4 byte of data each.
 
 There are 3 tags available and the datasheet covers all of them NTAG213_215_216 : https://www.nxp.com/docs/en/data-sheet/NTAG213_215_216.pdf
 1) NTAG213: Total memory 180 bytes

@@ -101,6 +101,123 @@ https://stackoverflow.com/questions/41249713/configure-mifare-desfire-ev1-as-nfc
 
 https://stackoverflow.com/questions/37675905/create-standard-data-file-in-mifare-desfire
 
+For Originality signature verification see: Mifare DESFire Light Features and Hints AN12343.pdf
+
+pages 86-88:
+```plaintext
+11 Originality Checking
+The originality check allows verification of the genuineness of MIFARE DESFire Light.
+Two ways are offered to check the originality of the PICC:
+• Symmetric Originality Check - The first option is based on a symmetric authentication.
+• Asymmetric Originality Check - The second option works on the verification of an
+asymmetric signature that can be retrieved from the card.
+11.1 Symmetric Originality Check
+Four secret symmetric Originality Keys of key type AES are present on each individual
+MIFARE DESFire Light IC on PICC level.
+• The keys are written on the IC at the production in the NXP factory.
+• Keys are created in NXP factory HSM and never leave the secure environment.
+• The keys can`t be changed after the IC leaves the NXP factory.
+• Originality Check is done by executing a successful LRP Authentication with one
+of the Originality keys. Therefore LRP mode needs to be enabled with command
+Cmd.SetConfiguration beforehand.
+• If the authentication with one of the Originality Keys is successful, the Originality Check
+is successful and the authenticity of the IC is proven.
+11.2 Asymmetric Originality Check
+MIFARE DESFire Light contains the NXP Originality Signature, to be able to verify
+with a certain probability that the IC is really based on silicon manufactured by NXP
+Semiconductors.
+Each MIFARE DESFire Light IC contains a 56 byte long elliptic curve signature, using the
+secp224r1 curve. The input data for signature creation is the 7 byte UID of the IC.
+Signature characteristics:
+• The signature is computed according to Elliptic Curve DSA (ECDSA) based on the UID
+of the IC.
+• The asymmetric key pair (private key and public key) is created securely in NXP`s
+HSM. The private key remains stored in the high secure HSM inside NXP premises.
+The public key can be handed out.
+• The resulting signature is 56 bytes long and according to SEC standard the secp224r1
+curve is taken for signature creation and validation.
+• A chip unique signature is embedded into each IC during manufacturing. The signature
+is created using the private key and signing the UID of the IC.
+• The signature can be read out from the final IC, and the public key can be used to
+verify the signature which was embedded into the chip.
+11.2.1 Originality Signature Verification
+The steps for verifying the embedded Originality Signature of a MIFARE DESFire Light
+IC are the following:
+• Activate the IC on ISO/IEC 14443-4
+NXP Semiconductors AN12343
+MIFARE DESFire Light Features and Hints
+AN12343 All information provided in this document is subject to legal disclaimers. © NXP B.V. 2020. All rights reserved.
+Application note Rev. 1.1 — 20 January 2020
+COMPANY PUBLIC 522511 87 / 93
+• Retrieve the UID from the PICC
+• Retrieve the Originality Signature (56 bytes) from the PICC by using the Read_Sig
+command
+• Verify the retrieved signature by applying an ECDSA signature verification using the
+corresponding public key
+Originality Check public key value for MIFARE DESFire Light:
+0x040E98E117AAA36457F43173DC920A8757267F44CE4EC5ADD3C54075571AEBB
+F7B942A9774A1D94AD02572427E5AE0A2DD36591B1FB34FCF3D
+Byte 1 of the public key, here using the value 0x04, signalizes the IETF protocol SEC1
+representation of a point on an elliptic curve, which is a sequence of the fields as seen in
+Table 43.
+The following 28 bytes represent the x coordinate of the public key.
+And the last 28 bytes represent the y coordinate of the public key.
+Table 43. SEC1 point representation
+Field Description
+B0 {02, 03, 04}, where 02 or 03 represent a
+compressed point (x only), while 04 represents
+a complete point (x, y)
+X x coordinate of a point
+Y y coordinate of a point, optional (only present
+for B0 = 0x04)
+The command steps and parameter details for the signature verification flow can be seen
+in Table 44.
+Table 44. Asymmetric Originality Signature Verification
+Step Command Data Message
+1 Cmd Code = 3C
+2 Cmd Header = 00
+3 C-APDU
+Read_Sig
+> 903C0000010000
+4 R-APDU
+(56 bytes ECDSA signature ||
+response code)
+< 1CA298FC3F0F04A329254AC0DF7A3EB8E756C
+076CD1BAAF47B8BBA6DCD78BCC64DFD3E80
+E679D9A663CAE9E4D4C2C77023077CC549CE
+4A619190
+5 ECDSA signature = 1CA298FC3F0F04A329254AC0DF7A3EB8E756C
+076CD1BAAF47B8BBA6DCD78BCC64DFD3E80
+E679D9A663CAE9E4D4C2C77023077CC549CE
+4A61
+6 UID of the IC = 045A115A346180
+ECDSA Verification
+7 Elliptic Curve Name = secp224r1
+8 SEC1 Point Representation = 04
+NXP Semiconductors AN12343
+MIFARE DESFire Light Features and Hints
+AN12343 All information provided in this document is subject to legal disclaimers. © NXP B.V. 2020. All rights reserved.
+Application note Rev. 1.1 — 20 January 2020
+COMPANY PUBLIC 522511 88 / 93
+Step Command Data Message
+9 Public Key point coordinate xD
+ (28 bytes)
+= 0E98E117AAA36457F43173DC920A8757267F44
+CE4EC5ADD3C5407557
+10 Public Key point coordinate yD
+ (28 bytes)
+= 1AEBBF7B942A9774A1D94AD02572427E5AE0A
+2DD36591B1FB34FCF3D
+11 Signature part 1 r = 1CA298FC3F0F04A329254AC0DF7A3EB8E756C
+076CD1BAAF47B8BBA6D
+12 Signature part 2 s = CD78BCC64DFD3E80E679D9A663CAE9E4D4C2
+C77023077CC549CE4A61
+13 ECDSA Verification
+(Implementation or Cryptographic
+Toolset)
+= Signature valid
+
+```
 
 
 Access on Android through IsoDep technology

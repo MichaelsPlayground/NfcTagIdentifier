@@ -95,6 +95,8 @@ public class MainActivity extends AppCompatActivity  implements NfcAdapter.Reade
             }
             else if (ti.isMifareUltralight()) {
                 writeToUiAppend(etData, ti.dumpMifareUltralight());
+            } else if (ti.isDesfire()) {
+                writeToUiAppend(etData, ti.dumpMifareUltralight()); // todo change dump
             }
         }
 

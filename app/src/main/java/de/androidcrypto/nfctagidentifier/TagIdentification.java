@@ -102,6 +102,14 @@ public class TagIdentification {
         return isMifareUltralight;
     }
 
+    public boolean isNtag21x() {
+        return isNtag21x;
+    }
+
+    public boolean isDesfire() {
+        return isDesfire;
+    }
+
     public String[] getTechList() {
         return techList;
     }
@@ -545,6 +553,7 @@ public class TagIdentification {
         nfcA = NfcA.get(tag);
         if (nfcA == null) {
             ntag21xSuccess = false;
+            desfireSuccess = false;
             Log.e(TAG, "Error in using NfcA technology");
             return;
         }

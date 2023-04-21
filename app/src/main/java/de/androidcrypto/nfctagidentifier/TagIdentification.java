@@ -36,9 +36,12 @@ public class TagIdentification {
     private NdefFormatable ndefFormatable;
     private IsoDep isoDep;
     private int sizeOfTechList = 0;
+    // products
     private boolean isMifareClassic = false;
     private boolean isMifareUltralight = false;
     private boolean isNtag21x = false;
+    private boolean isDesfire = false;
+    // tech classes
     private boolean isNfca = false;
     private boolean isNdefFormatable = false;
 
@@ -555,15 +558,90 @@ public class TagIdentification {
             byte[] getVersionResp;
             if (sak == 32) {
                 System.out.println("desfireGetVersion path");
-                getVersionResp = desfireGetVersion(nfcA); // this command is for key version
+                //getVersionResp = desfireGetVersion(nfcA); // this command is for key version
+                getVersionResp = ntag21xGetVersion(nfcA); // this command is for key version
             } else {
                 System.out.println("ntag21xGetVersion path");
                 getVersionResp = ntag21xGetVersion(nfcA);
             }
 
             System.out.println("*** NFCA getVersionResp length: " + getVersionResp.length + " data: " + bytesToHexNpe(getVersionResp));
+            /*
+            // for Mifare Desfire we first need to run the Select ISO command
+            byte[] selectIsoResponse = commandIsoSelect(nfcA);
+            if (selectIsoResponse != null) {
+                System.out.println("selectIsoCommandResponse length: " + selectIsoResponse.length + " data: " + bytesToHexNpe(selectIsoResponse));
+            } else {
+                System.out.println("selectIsoCommandResponse is NULL");
+            }
+            */
+            // 9000 is expected and SUCCESS
+
+
+            // see MIFARE DESFire Light Features and Hints AN12343, pages 11 + 12, https://www.nxp.com/docs/en/application-note/AN12343.pdf
+            byte[] getVersionResp1 = getVersionDesfireStart(nfcA);
+            if (getVersionResp1 != null) {
+                System.out.println("getVersionResponse1 length: " + getVersionResp1.length + " data: " + bytesToHexNpe(getVersionResp1));
+            } else {
+                System.out.println("getVersionResponse1 is NULL");
+            }
+            byte[] getVersionResp2 = getVersionDesfire2nd(nfcA);
+            if (getVersionResp2 != null) {
+                System.out.println("getVersionResponse2 length: " + getVersionResp2.length + " data: " + bytesToHexNpe(getVersionResp2));
+            } else {
+                System.out.println("getVersionResponse2 is NULL");
+            }
+            byte[] getVersionResp3 = getVersionDesfire2nd(nfcA);
+            if (getVersionResp3 != null) {
+                System.out.println("getVersionResponse3 length: " + getVersionResp3.length + " data: " + bytesToHexNpe(getVersionResp3));
+            } else {
+                System.out.println("getVersionResponse3 is NULL");
+            }
+            // 9100 at the end is SUCCESS
+            /*
+            // desfire light
+             selectIsoCommandResponse length: 2 data: 9000
+            getVersionResponse1 length: 9 data: 0408013000130591af
+            getVersionResponse2 length: 9 data: 0408010002130591af
+            getVersionResponse3 length: 16 data: 049ba07af16780ceed91492039199100
+             */
+/*
+see NXP MIFARE DESFire EV1 Protocol in DESFire.pdf https://raw.githubusercontent.com/revk/DESFireAES/master/DESFire.pdf
+60: Get Version
+This gets the card version details.
+The response is in several parts, and uses AF status code on each. Send an AF command to get the next part.
+
+The first part if hardware version
+Hardware version
+Vendor ID 04 for NCP
+Type 01
+Sub Type 01
+Major Version 1 byte
+Minor Version 1 byte
+Storage Size 18 means 4k, 16 means 2k
+Protocol Type 05 means ISO 14443-2 and -3
+
+The second part is software version
+Software version
+Vendor ID 04 for NCP
+Type 01
+Sub Type 01
+Major Version 1 byte
+Minor Version 1 byte
+Storage Size 18 means 4k, 16 means 2k
+
+The last part provides other data
+General version
+UID 7 byte UID, starting 04 for NXP
+Batch 5 byte batch ID
+Week Week number (BCD coded, one byte)
+Year Year number (BCD coded, one byte)
+ */
+
+
+
             // desfire ev2 2k: af04010112001605
-            // desfire ev2 4k: SAK 32 NFCA getVersionResp length: 2 data: 6700
+            // desfire ev2 4k: af04010112001805 SAK 32 NFCA getVersionResp length: 2 data: 6700
             // desfire light: SAK 32
             // desfire ev1 2k: af04010101001605
 /*
@@ -575,58 +653,148 @@ information, Part2 returns the software-related information and Part3 and last f
 returns the production-related information. This command is freely accessible without
 secure messaging as soon as the PD is selected and there is no active authentication
  */
+/*
+see NTAG213_215_216.pdf
+Table 28. GET_VERSION response for NTAG213, NTAG215 and NTAG216
+Byte no.
+Description
+                                Major   Minor
+Type    fixed  vendor prod prod product product storage protocol
+        Header ID     type subt version version size    type
+NTAG213 00     04     04   02   01      00      0x0F    0x03
+NTAG215 00     04     04   02   01      00      0x11    0x03
+NTAG216 00     04     04   02   01      00      0x13    0x03
 
-            // for NTAG21x see the datasheet page 36
-            if (getVersionResp[2] == (byte) 0x04) {
-                // it is of type NTAG
-                isNtag21x = true;
-                tagTypeName = "NTAG21x";
-                tagId = bytesToHexNpe(nfcA.getTag().getId());
-                // storage size is in byte 6
-                if (getVersionResp[6] == (byte) 0x0F) {
-                    // NTAG213
-                    tagSizeInBytes = 180; // complete memory
-                    tagSizeUserInBytes = 144; // user memory
-                    numberOfPages = tagSizeInBytes / 4; // should be 45
-                    numberOfCounters = 1;
-                    numberOfPageStartUserMemory = 4;
-                    productName = "NTAG213";
-                    tagTypeSubName = techNtag21x.NTAG213.toString();
-                    tagTypeSub = 0;
-                    isTested = false;
-                } else if (getVersionResp[6] == (byte) 0x11) {
-                    // NTAG215
-                    tagSizeInBytes = 540; // complete memory
-                    tagSizeUserInBytes = 504; // user memory
-                    numberOfPages = tagSizeInBytes / 4; // should be 135
-                    numberOfCounters = 1;
-                    numberOfPageStartUserMemory = 4;
-                    productName = "NTAG215";
-                    tagTypeSubName = techNtag21x.NTAG215.toString();
-                    tagTypeSub = 1;
-                    isTested = true;
-                } else if (getVersionResp[6] == (byte) 0x13) {
-                    // NTAG216
-                    tagSizeInBytes = 924; // complete memory
-                    tagSizeUserInBytes = 888; // user memory
-                    numberOfPages = tagSizeInBytes / 4; // should be 231
-                    numberOfCounters = 1;
-                    numberOfPageStartUserMemory = 4;
-                    productName = "NTAG216";
-                    tagTypeSubName = techNtag21x.NTAG216.toString();
-                    tagTypeSub = 2;
-                    isTested = true;
-                } else {
-                    // unknown NTAG type
-                    tagSizeInBytes = 0; // complete memory
-                    tagSizeUserInBytes = 0; // user memory
-                    numberOfPages = 0; // should be 231
-                    numberOfCounters = 0;
-                    numberOfPageStartUserMemory = 0;
-                    productName = "NTAG_UNKNOWN";
-                    tagTypeSubName = "NTAG UNKNOWN";
-                    tagTypeSub = -1;
-                    isTested = false;
+Desfire
+ D40                            00
+ EV1 2K af     04     01   01   01      00      0x16    0x05
+ EV2 2K af     04     01   01   12      00      0x16    0x05
+ EV2 4K af     04     01   01   12      00      0x18    0x05
+ Light                          08
+
+Byte Nr 00     01     02   03   04      05      06      07
+
+af 04 01 01 12 00 1805
+af 04 01 01 12 00 1605
+af 04 01 01 01 00 1605
+storage size: 0x0F = 144 bytes, 0x11 = 504 bytes, 0x23 = 888 bytes
+protocol type: 0x03 = ISO/IEC 14443-3 compliant
+ */
+
+
+            if (getVersionResp.length > 5) {
+                if (getVersionResp[2] == (byte) 0x01) {
+                    // is of type DESFire
+                    isDesfire = true;
+                    tagTypeName = "DESFire";
+                    tagId = bytesToHexNpe(nfcA.getTag().getId());
+                    // major product version
+                    if (getVersionResp[4] == (byte) 0x00) {
+                        // first version D40
+                        productName = "DESFire D40";
+                        tagTypeSubName = "DESFireD40";
+                        tagTypeSub = 0;
+                        tagSizeInBytes = getDesfireCompleteMemory(getVersionResp[6]);
+                        isTested = false;
+                    } else if (getVersionResp[4] == (byte) 0x01) {
+                        // second version EV1
+                        productName = "DESFire EV1";
+                        tagTypeSubName = "DESFireEV1";
+                        tagTypeSub = 1;
+                        tagSizeInBytes = getDesfireCompleteMemory(getVersionResp[6]);
+                        isTested = false;
+                    } else if (getVersionResp[4] == (byte) 0x12) {
+                        // third version EV2
+                        productName = "DESFire EV2";
+                        tagTypeSubName = "DESFireEV2";
+                        tagTypeSub = 2;
+                        tagSizeInBytes = getDesfireCompleteMemory(getVersionResp[6]);
+                        isTested = false;
+                    } else if (getVersionResp[4] == (byte) 0x08)  {
+                        // light version Light
+                        productName = "DESFire Light";
+                        tagTypeSubName = "DESFireLight";
+                        tagTypeSub = 3;
+                        tagSizeInBytes = getDesfireCompleteMemory(getVersionResp[6]);
+                        isTested = false;
+                    } else if (getVersionResp[4] == (byte) 0x20) { // todo check this, value is guessed
+                        // fourth version EV3
+                        productName = "DESFire EV3";
+                        tagTypeSubName = "DESFireEV3";
+                        tagTypeSub = 4;
+                        tagSizeInBytes = getDesfireCompleteMemory(getVersionResp[6]);
+                        isTested = false;
+                    } else {
+                        // unknown DESFire type
+                        tagSizeInBytes = 0; // complete memory
+                        productName = "DESFIRE UNKNOWN";
+                        tagTypeSubName = "DESFIRE_UNKNOWN";
+                        tagTypeSub = -1;
+                        isTested = false;
+                    }
+
+                    // storage size is in byte 6
+                    if (getVersionResp[6] == (byte) 0x16) {
+                        // 2K
+
+                    }
+
+                }
+
+
+
+                // for NTAG21x see the datasheet page 36
+                if (getVersionResp[2] == (byte) 0x04) {
+                    // it is of type NTAG
+                    isNtag21x = true;
+                    tagTypeName = "NTAG21x";
+                    tagId = bytesToHexNpe(nfcA.getTag().getId());
+                    // storage size is in byte 6
+                    if (getVersionResp[6] == (byte) 0x0F) {
+                        // NTAG213
+                        tagSizeInBytes = 180; // complete memory
+                        tagSizeUserInBytes = 144; // user memory
+                        numberOfPages = tagSizeInBytes / 4; // should be 45
+                        numberOfCounters = 1;
+                        numberOfPageStartUserMemory = 4;
+                        productName = "NTAG213";
+                        tagTypeSubName = techNtag21x.NTAG213.toString();
+                        tagTypeSub = 0;
+                        isTested = false;
+                    } else if (getVersionResp[6] == (byte) 0x11) {
+                        // NTAG215
+                        tagSizeInBytes = 540; // complete memory
+                        tagSizeUserInBytes = 504; // user memory
+                        numberOfPages = tagSizeInBytes / 4; // should be 135
+                        numberOfCounters = 1;
+                        numberOfPageStartUserMemory = 4;
+                        productName = "NTAG215";
+                        tagTypeSubName = techNtag21x.NTAG215.toString();
+                        tagTypeSub = 1;
+                        isTested = true;
+                    } else if (getVersionResp[6] == (byte) 0x13) {
+                        // NTAG216
+                        tagSizeInBytes = 924; // complete memory
+                        tagSizeUserInBytes = 888; // user memory
+                        numberOfPages = tagSizeInBytes / 4; // should be 231
+                        numberOfCounters = 1;
+                        numberOfPageStartUserMemory = 4;
+                        productName = "NTAG216";
+                        tagTypeSubName = techNtag21x.NTAG216.toString();
+                        tagTypeSub = 2;
+                        isTested = true;
+                    } else {
+                        // unknown NTAG type
+                        tagSizeInBytes = 0; // complete memory
+                        tagSizeUserInBytes = 0; // user memory
+                        numberOfPages = 0; // should be 231
+                        numberOfCounters = 0;
+                        numberOfPageStartUserMemory = 0;
+                        productName = "NTAG_UNKNOWN";
+                        tagTypeSubName = "NTAG UNKNOWN";
+                        tagTypeSub = -1;
+                        isTested = false;
+                    }
                 }
             }
 
@@ -639,6 +807,13 @@ secure messaging as soon as the PD is selected and there is no active authentica
             nfcA.close();
         } catch (Exception e) {
         }
+    }
+
+    private int getDesfireCompleteMemory(Byte byte06) {
+        if (byte06 == 0x16) return 2048; // tested
+        if (byte06 == 0x18) return 4096; // tested
+        if (byte06 == 0x0A) return 8192; // todo real value, guessed
+        return 0;
     }
 
     private byte[] ntag21xGetVersion(NfcA nfcA) {
@@ -663,7 +838,96 @@ secure messaging as soon as the PD is selected and there is no active authentica
         return null;
     }
 
-    private byte[] desfireGetVersion(NfcA nfcA) {
+    // neccessary for Desfire Light as first command to get further data
+    private byte[] commandIsoSelect(NfcA nfca) {
+        String command = "00A4040C10A00000039656434103F015400000000B00";
+        byte[] response = null;
+        try {
+            response = nfcA.transceive(hexStringToByteArray(command));
+            return response;
+        } catch (IOException e) {
+            Log.d(TAG, "Mifare Desfire IsoSelect command unsupported, IOException: " + e.getMessage());
+        }
+        // this is just an advice - if an error occurs - close the connection and reconnect the tag
+        // https://stackoverflow.com/a/37047375/8166854
+        try {
+            nfcA.close();
+        } catch (Exception e) {
+        }
+        try {
+            nfcA.connect();
+        } catch (Exception e) {
+        }
+        return null;
+    }
+
+    private byte[] getVersionDesfireStart(NfcA nfca) {
+        String command = "9060000000";
+        byte[] response = null;
+        try {
+            response = nfcA.transceive(hexStringToByteArray(command));
+            return response;
+        } catch (IOException e) {
+            Log.d(TAG, "Mifare Desfire getVersionDesfire command unsupported, IOException: " + e.getMessage());
+        }
+        // this is just an advice - if an error occurs - close the connection and reconnect the tag
+        // https://stackoverflow.com/a/37047375/8166854
+        try {
+            nfcA.close();
+        } catch (Exception e) {
+        }
+        try {
+            nfcA.connect();
+        } catch (Exception e) {
+        }
+        return null;
+    }
+
+    private byte[] getVersionDesfire2nd(NfcA nfca) {
+        String command = "90AF000000";
+        byte[] response = null;
+        try {
+            response = nfcA.transceive(hexStringToByteArray(command));
+            return response;
+        } catch (IOException e) {
+            Log.d(TAG, "Mifare Desfire getVersionDesfire command unsupported, IOException: " + e.getMessage());
+        }
+        // this is just an advice - if an error occurs - close the connection and reconnect the tag
+        // https://stackoverflow.com/a/37047375/8166854
+        try {
+            nfcA.close();
+        } catch (Exception e) {
+        }
+        try {
+            nfcA.connect();
+        } catch (Exception e) {
+        }
+        return null;
+    }
+
+    private byte[] getVersionDesfire3rd(NfcA nfca) {
+        String command = "90AF000000";
+        byte[] response = null;
+        try {
+            response = nfcA.transceive(hexStringToByteArray(command));
+            return response;
+        } catch (IOException e) {
+            Log.d(TAG, "Mifare Desfire getVersionDesfire command unsupported, IOException: " + e.getMessage());
+        }
+        // this is just an advice - if an error occurs - close the connection and reconnect the tag
+        // https://stackoverflow.com/a/37047375/8166854
+        try {
+            nfcA.close();
+        } catch (Exception e) {
+        }
+        try {
+            nfcA.connect();
+        } catch (Exception e) {
+        }
+        return null;
+    }
+
+    private byte[] desfireGetKeyVersion(NfcA nfcA) {
         byte[] getVersionResponse = null;
         try {
             byte[] getVersionCommand = new byte[]{(byte) 0x64};

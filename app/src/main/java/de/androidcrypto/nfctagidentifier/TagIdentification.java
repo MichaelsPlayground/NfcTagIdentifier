@@ -49,6 +49,7 @@ public class TagIdentification {
     private boolean mifareClassicSuccess = false;
     private boolean mifareUltralightSuccess = false;
     private boolean ntag21xSuccess = false;
+    private boolean desfireSuccess = false;
 
     private String[] techList; // get it from the tag
     private String tagId; // get it from the tag
@@ -548,10 +549,34 @@ public class TagIdentification {
         try {
             nfcA.connect();
 
-            System.out.println("*** SAK: " + nfcA.getSak() + " ***");
+            short sak = nfcA.getSak();
+            System.out.println("*** NFCA SAK: " + nfcA.getSak() + " ***");
 
-            byte[] getVersionResp = ntag21xGetVersion(nfcA);
-            // see the datasheet page 36
+            byte[] getVersionResp;
+            if (sak == 32) {
+                System.out.println("desfireGetVersion path");
+                getVersionResp = desfireGetVersion(nfcA); // this command is for key version
+            } else {
+                System.out.println("ntag21xGetVersion path");
+                getVersionResp = ntag21xGetVersion(nfcA);
+            }
+
+            System.out.println("*** NFCA getVersionResp length: " + getVersionResp.length + " data: " + bytesToHexNpe(getVersionResp));
+            // desfire ev2 2k: af04010112001605
+            // desfire ev2 4k: SAK 32 NFCA getVersionResp length: 2 data: 6700
+            // desfire light: SAK 32
+            // desfire ev1 2k: af04010101001605
+/*
+The GetVersion command returns manufacturing related data of MIFARE DESFire Light
+(MF2DL(H)x0). No parameters are required for this command.
+Remark: This command is only available after ISO/IEC 14443-4 activation.
+The version data is return over three frames. Part1 returns the hardware-related
+information, Part2 returns the software-related information and Part3 and last frame
+returns the production-related information. This command is freely accessible without
+secure messaging as soon as the PD is selected and there is no active authentication
+ */
+
+            // for NTAG21x see the datasheet page 36
             if (getVersionResp[2] == (byte) 0x04) {
                 // it is of type NTAG
                 isNtag21x = true;
@@ -579,7 +604,7 @@ public class TagIdentification {
                     productName = "NTAG215";
                     tagTypeSubName = techNtag21x.NTAG215.toString();
                     tagTypeSub = 1;
-                    isTested = false;
+                    isTested = true;
                 } else if (getVersionResp[6] == (byte) 0x13) {
                     // NTAG216
                     tagSizeInBytes = 924; // complete memory
@@ -620,6 +645,28 @@ public class TagIdentification {
         byte[] getVersionResponse = null;
         try {
             byte[] getVersionCommand = new byte[]{(byte) 0x60};
+            getVersionResponse = nfcA.transceive(getVersionCommand);
+            return getVersionResponse;
+        } catch (IOException e) {
+            Log.d(TAG, "Mifare Ultralight getVersion unsupported, IOException: " + e.getMessage());
+        }
+        // this is just an advice - if an error occurs - close the connection and reconnect the tag
+        // https://stackoverflow.com/a/37047375/8166854
+        try {
+            nfcA.close();
+        } catch (Exception e) {
+        }
+        try {
+            nfcA.connect();
+        } catch (Exception e) {
+        }
+        return null;
+    }
+
+    private byte[] desfireGetVersion(NfcA nfcA) {
+        byte[] getVersionResponse = null;
+        try {
+            byte[] getVersionCommand = new byte[]{(byte) 0x64};
             getVersionResponse = nfcA.transceive(getVersionCommand);
             return getVersionResponse;
         } catch (IOException e) {

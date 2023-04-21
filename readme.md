@@ -95,6 +95,9 @@ Mifare DESFire EV3 Quick start guide: https://www.nxp.com/docs/en/application-no
 
 Mifare DESFire EV3 feature and functionality comparison to other MIFARE DESFire products: https://www.nxp.com/docs/en/application-note/AN12752.pdf
 
+MIFARE DESFire as Type 4 Tag AN11004: https://www.nxp.com/docs/en/application-note/AN11004.pdf
+
+
 TAPLinx project https://github.com/dfpalomar/TapLinxSample/
 
 https://stackoverflow.com/questions/41249713/configure-mifare-desfire-ev1-as-nfc-forum-type-4-tag-for-ndef

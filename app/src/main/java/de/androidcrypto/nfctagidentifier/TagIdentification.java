@@ -698,6 +698,7 @@ protocol type: 0x03 = ISO/IEC 14443-3 compliant
                     tagTypeName = "DESFire";
                     tagId = bytesToHexNpe(nfcA.getTag().getId());
                     // major product version
+                    Log.d(TAG, "getVersion[4] = major version: " + bytesToHexNpe(new byte[]{getVersionResp[4]}));
                     if (getVersionResp[4] == (byte) 0x00) {
                         // first version D40
                         productName = "DESFire D40";
@@ -711,28 +712,28 @@ protocol type: 0x03 = ISO/IEC 14443-3 compliant
                         tagTypeSubName = "DESFireEV1";
                         tagTypeSub = 1;
                         tagSizeInBytes = getDesfireCompleteMemory(getVersionResp[6]);
-                        isTested = false;
+                        isTested = true;
                     } else if (getVersionResp[4] == (byte) 0x12) {
                         // third version EV2
                         productName = "DESFire EV2";
                         tagTypeSubName = "DESFireEV2";
                         tagTypeSub = 2;
                         tagSizeInBytes = getDesfireCompleteMemory(getVersionResp[6]);
-                        isTested = false;
-                    } else if (getVersionResp[4] == (byte) 0x08)  {
+                        isTested = true;
+                    } else if (getVersionResp[4] == (byte) 0x30)  {
                         // light version Light
                         productName = "DESFire Light";
                         tagTypeSubName = "DESFireLight";
                         tagTypeSub = 3;
                         tagSizeInBytes = getDesfireCompleteMemory(getVersionResp[6]);
                         isTested = false;
-                    } else if (getVersionResp[4] == (byte) 0x20) { // todo check this, value is guessed
+                    } else if (getVersionResp[4] == (byte) 0x33) {
                         // fourth version EV3
                         productName = "DESFire EV3";
                         tagTypeSubName = "DESFireEV3";
                         tagTypeSub = 4;
                         tagSizeInBytes = getDesfireCompleteMemory(getVersionResp[6]);
-                        isTested = false;
+                        isTested = true;
                     } else {
                         // unknown DESFire type
                         tagSizeInBytes = 0; // complete memory
@@ -847,7 +848,7 @@ protocol type: 0x03 = ISO/IEC 14443-3 compliant
         return null;
     }
 
-    // neccessary for Desfire Light as first command to get further data
+    // necessary for Desfire Light as first command to get further data
     private byte[] commandIsoSelect(NfcA nfca) {
         String command = "00A4040C10A00000039656434103F015400000000B00";
         byte[] response = null;

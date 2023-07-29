@@ -268,16 +268,23 @@ There are 3 tags available and the datasheet covers all of them NTAG213_215_216 
 2) NTAG215: Total memory 540 bytes
 3) NTAG216_ Total memory 924 bytes
 
+## NTAG424 family
+
+Some tag facts: 
+
+Total memory 448 bytes, user memory 416 bytes
 
 All datasheets are available in the docs folder of this repository but it is always better to get one from the origin source.
 
 Colons can be used to align columns.
 
-| Tables        | Are           | Cool  |
-| ------------- |:-------------:| -----:|
-| col 3 is      | right-aligned | $1600 |
-| col 2 is      | centered      |   $12 |
-| zebra stripes | are neat      |    $1 |
+| Tag family     |          sub types          | Technologies               |
+|----------------|:---------------------------:|----------------------------|
+| DESFire        |  D40, EV1, EV2, EV3, Light  | NfcA, NDEF, IsoDep         |
+| Mifare Classic |             1K              | NfcA, NDEF, Mifare Classic |
+| Ultralight     |             EV1             | NfcA, NDEF, Ultralight     |  
+| NT21x          |        213, 215, 216        | NfcA, NDEF, Ultralight     |  
+| NT424          | 424, 424 DNA, 424 DNA TT *1 | NfcA, NDEF, IsoDep         |  
 
 There must be at least 3 dashes separating each header cell.
 The outer pipes (|) are optional, and you don't need to make the

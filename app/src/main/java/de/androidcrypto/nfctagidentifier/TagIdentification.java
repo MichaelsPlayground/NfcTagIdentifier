@@ -564,6 +564,8 @@ public class TagIdentification {
             short sak = nfcA.getSak();
             System.out.println("*** NFCA SAK: " + nfcA.getSak() + " ***");
 
+            System.out.println("SAK in binary: " + Integer.toBinaryString(0xFFFF & sak));
+
             byte[] getVersionResp;
             if (sak == 32) {
                 System.out.println("desfireGetVersion path");
@@ -833,7 +835,7 @@ protocol type: 0x03 = ISO/IEC 14443-3 compliant
             getVersionResponse = nfcA.transceive(getVersionCommand);
             return getVersionResponse;
         } catch (IOException e) {
-            Log.d(TAG, "Mifare Ultralight getVersion unsupported, IOException: " + e.getMessage());
+            Log.d(TAG, "NTAG21x getVersion unsupported, IOException: " + e.getMessage());
         }
         // this is just an advice - if an error occurs - close the connection and reconnect the tag
         // https://stackoverflow.com/a/37047375/8166854
@@ -958,6 +960,8 @@ protocol type: 0x03 = ISO/IEC 14443-3 compliant
         }
         return null;
     }
+
+
 
 
     /**
